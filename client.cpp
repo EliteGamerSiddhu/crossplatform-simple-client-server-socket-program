@@ -44,7 +44,7 @@
 
 using namespace std;
 
-void cleanup(int sock){
+void cleanup(SOCKET sock){
 	#ifdef _WIN32
 
 	if(sock != INVALID_SOCKET){
