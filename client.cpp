@@ -2,34 +2,71 @@
 
 #ifdef _WIN32
 
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
+	#ifndef WIN32_LEAN_AND_MEAN
+		#define WIN32_LEAN_AND_MEAN
+	#endif
 
-#include <winsock2.h>
-#include <ws2tcpip.h>
+	#include <winsock2.h>
+	#include <ws2tcpip.h>
 
-#pragma comment(lib, "Ws2_32.lib")
+	#pragma comment(lib, "Ws2_32.lib")
 
 #else
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <unistd.h>
+
+	#include <sys/socket.h>
+	#include <netinet/in.h>
+	#include <netdb.h>
+	#include <unistd.h>
+	#include <cstring>
+	#include <cerrno>
+
+	#ifndef SD_SEND
+		#define SD_SEND SHUT_WR
+	#endif
+
 #endif
 
 #define PORT "8080"
 #define LOCALHOST "127.0.0.1"
 #define BUFLEN 1048
 
+#ifndef INVALID_SOCKET
+	#define INVALID_SOCKET (~0)
+#endif
+
+#ifndef SOCKET_ERROR
+	#define SOCKET_ERROR (-1)
+#endif
+
 using namespace std;
+
+void cleanup(int sock){
+	#ifdef _WIN32
+
+	if(sock != INVALID_SOCKET){
+		closesocket(sock);
+	}
+	WSACleanup();
+
+	#else
+
+	if(sock != INVALID_SOCKET){
+		close(sock);
+	}
+
+	#endif
+}
 
 int main() {
 
+	int iResult;
+
 	//Initializing Winsocket library
+
+	#ifdef _WIN32
+
 	WSADATA wsaData;
 
-	int iResult;
 
 	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (iResult != 0) {
@@ -37,10 +74,12 @@ int main() {
 		return 1;
 	}
 
+	#endif
+
 	//Creating server address variable
 	addrinfo *result = NULL, *ptr = NULL, serv_address;
 
-	ZeroMemory(&serv_address, sizeof(serv_address));
+	memset(&serv_address, 0, sizeof(serv_address));
 
 	serv_address.ai_family = AF_INET;
 	serv_address.ai_socktype = SOCK_STREAM;
@@ -51,12 +90,12 @@ int main() {
 	iResult = getaddrinfo(LOCALHOST, PORT, &serv_address, &result);
 	if (iResult != 0) {
 		cerr << "Getting addr info failed" << endl;
-		WSACleanup();
+		cleanup(-1);
 		return -1;
 	}
 
 	//Creating the socket
-	SOCKET ConnectSocket = INVALID_SOCKET;
+	int ConnectSocket = INVALID_SOCKET;
 
 	ptr = result;
 	ConnectSocket = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
@@ -64,22 +103,22 @@ int main() {
 	if (ConnectSocket == INVALID_SOCKET) {
 		cerr << "Socket creation failed" << endl;
 		freeaddrinfo(ptr);
-		WSACleanup();
+		cleanup(ConnectSocket);
 		return -1;
 	}
 
 	//Connection to a socket
 	iResult = connect(ConnectSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
 	if (iResult == SOCKET_ERROR) {
-		closesocket(ConnectSocket);
-		ConnectSocket = INVALID_SOCKET;
+		cleanup(ConnectSocket);
+		return -1;
 	}
 
 	freeaddrinfo(result);
 
 	if (ConnectSocket == INVALID_SOCKET) {
 		cerr << "Unable to connect to server" << endl;
-		WSACleanup();
+		cleanup(ConnectSocket);
 		return -1;
 	}
 
@@ -93,8 +132,7 @@ int main() {
 	iResult = send(ConnectSocket, sendbuf, (int) strlen(sendbuf) + 1, 0);
 	if (iResult == SOCKET_ERROR) {
 		cerr << "Message sending failed" << endl;
-		closesocket(ConnectSocket);
-		WSACleanup();
+		cleanup(ConnectSocket);
 		return -1;
 	}
 
@@ -104,8 +142,7 @@ int main() {
 	iResult = shutdown(ConnectSocket, SD_SEND);
 	if (iResult == SOCKET_ERROR) {
 		cerr << "Shutdown failed" << endl;
-		closesocket(ConnectSocket);
-		WSACleanup();
+		cleanup(ConnectSocket);
 		return -1;
 	}
 
@@ -121,13 +158,16 @@ int main() {
 			cout << "Connection closed" << endl;
 		}
 		else {
-			cerr << "recv failed " << WSAGetLastError();
+			#ifdef _WIN32
+				cerr << "recv failed " << WSAGetLastError();
+			#else
+				cerr << "recv failed " << strerror(errno);
+			#endif
 		}
 	} while (iResult > 0);
 
 	//Closing the connection and the connection
-	closesocket(ConnectSocket);
-	WSACleanup();
+	cleanup(ConnectSocket);
 
 	return 0;
 }
