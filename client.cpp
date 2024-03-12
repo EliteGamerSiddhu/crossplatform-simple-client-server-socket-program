@@ -24,6 +24,10 @@
 		#define SD_SEND SHUT_WR
 	#endif
 
+	#ifndef SOCKET
+		#define SOCKET unsigned long long int
+	#endif
+
 #endif
 
 #define PORT "8080"
@@ -95,7 +99,7 @@ int main() {
 	}
 
 	//Creating the socket
-	unsigned int ConnectSocket = INVALID_SOCKET;
+	SOCKET ConnectSocket = INVALID_SOCKET;
 
 	ptr = result;
 	ConnectSocket = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);

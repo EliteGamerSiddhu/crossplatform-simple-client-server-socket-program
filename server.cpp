@@ -24,6 +24,10 @@
 		#define SD_SEND SHUT_WR
 	#endif
 
+	#ifndef SOCKET
+		#define SOCKET unsigned long long int
+	#endif
+
 
 #endif
 
@@ -93,7 +97,7 @@ int main() {
 
 
 	//Socket Creation
-	unsigned int ListenSocket = INVALID_SOCKET;
+	SOCKET ListenSocket = INVALID_SOCKET;
 
 	ListenSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
 
@@ -131,7 +135,7 @@ int main() {
 	}
 
 	//Accepting a single connection
-	unsigned int ClientSocket = INVALID_SOCKET;
+	SOCKET ClientSocket = INVALID_SOCKET;
 
 	ClientSocket = accept(ListenSocket, NULL, NULL);
 
