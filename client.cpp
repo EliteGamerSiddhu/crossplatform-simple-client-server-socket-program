@@ -95,7 +95,7 @@ int main() {
 	}
 
 	//Creating the socket
-	uint ConnectSocket = INVALID_SOCKET;
+	unsigned int ConnectSocket = INVALID_SOCKET;
 
 	ptr = result;
 	ConnectSocket = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);

@@ -93,7 +93,7 @@ int main() {
 
 
 	//Socket Creation
-	uint ListenSocket = INVALID_SOCKET;
+	unsigned int ListenSocket = INVALID_SOCKET;
 
 	ListenSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
 
@@ -131,7 +131,7 @@ int main() {
 	}
 
 	//Accepting a single connection
-	uint ClientSocket = INVALID_SOCKET;
+	unsigned int ClientSocket = INVALID_SOCKET;
 
 	ClientSocket = accept(ListenSocket, NULL, NULL);
 
